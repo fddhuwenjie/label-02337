@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document title="富文本格式示例">
+    <paragraph align="center" spacingAfter="400">
+        <text font="Arial" size="28" color="#c0392b" bold="true">
+            富文本格式演示
+        </text>
+    </paragraph>
+
+    <!-- 混合格式段落 -->
+    <paragraph align="left" spacingAfter="200">
+        <text font="Arial" size="12" color="#000000">这段文字包含</text>
+        <text font="Arial" size="12" color="#e74c3c" bold="true">红色粗体</text>
+        <text font="Arial" size="12" color="#000000">、</text>
+        <text font="Arial" size="12" color="#3498db" italic="true">蓝色斜体</text>
+        <text font="Arial" size="12" color="#000000">、</text>
+        <text font="Arial" size="12" color="#27ae60" underline="true">绿色下划线</text>
+        <text font="Arial" size="12" color="#000000">和</text>
+        <text font="Arial" size="14" color="#9b59b6" bold="true" italic="true">紫色粗斜体</text>
+        <text font="Arial" size="12" color="#000000">文字。</text>
+    </paragraph>
+
+    <!-- 不同字号 -->
+    <paragraph align="left" spacingAfter="200">
+        <text font="Arial" size="8" color="#333333">8号字体 </text>
+        <text font="Arial" size="10" color="#333333">10号字体 </text>
+        <text font="Arial" size="12" color="#333333">12号字体 </text>
+        <text font="Arial" size="14" color="#333333">14号字体 </text>
+        <text font="Arial" size="16" color="#333333">16号字体 </text>
+        <text font="Arial" size="18" color="#333333">18号字体</text>
+    </paragraph>
+
+    <!-- 彩虹色文字 -->
+    <paragraph align="center" spacingAfter="200">
+        <text font="Arial" size="16" color="#e74c3c" bold="true">彩</text>
+        <text font="Arial" size="16" color="#e67e22" bold="true">虹</text>
+        <text font="Arial" size="16" color="#f1c40f" bold="true">色</text>
+        <text font="Arial" size="16" color="#2ecc71" bold="true">文</text>
+        <text font="Arial" size="16" color="#3498db" bold="true">字</text>
+        <text font="Arial" size="16" color="#9b59b6" bold="true">效</text>
+        <text font="Arial" size="16" color="#e91e63" bold="true">果</text>
+    </paragraph>
+</document>
