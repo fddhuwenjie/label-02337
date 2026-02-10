@@ -41,9 +41,11 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && 
 
 # 安装运行时依赖和 VNC
 RUN apt-get update && apt-get install -y \
-    qt6-base-dev \
+    libqt6core6 \
+    libqt6gui6 \
+    libqt6widgets6 \
     libqt6xml6 \
-    libqscintilla2-qt6-15 \
+    libqscintilla2-qt6-l10n \
     libzip4 \
     xvfb \
     x11vnc \
@@ -60,6 +62,7 @@ WORKDIR /app
 
 # 从构建阶段复制可执行文件
 COPY --from=builder /build/build/XMLToDocxConverter /app/
+COPY --from=builder /usr/lib/*/libqscintilla2_qt6.so* /usr/lib/
 
 # 复制示例文件
 COPY samples/ /app/samples/
