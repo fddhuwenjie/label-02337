@@ -4,39 +4,43 @@
 
 ## How to Run
 
-### 方式一：一键运行脚本（推荐）
+### 一键运行脚本（推荐）
 
 ```bash
-cd frontend-user
-chmod +x run.sh
-./run.sh
+chmod +x start.sh
+./start.sh
 ```
 
 脚本会自动检测系统、安装依赖、编译并运行程序。
 
-### 方式二：手动编译运行
+#### Windows 用户
 
+Windows 需要使用 MSYS2 环境运行：
+
+1. 下载安装 MSYS2: https://www.msys2.org/
+2. 从开始菜单打开 **MSYS2 UCRT64**
+3. 进入项目目录并运行脚本：
+   ```bash
+   cd /c/path/to/project
+   ./start.sh
+   ```
+
+### 手动编译运行
+
+**Linux (Ubuntu/Debian):**
 ```bash
-# 安装依赖 (Ubuntu/Debian)
 sudo apt-get install build-essential cmake pkg-config qt6-base-dev libqt6xml6 libqscintilla2-qt6-dev libzip-dev
-
-# 编译
-cd frontend-user
-mkdir build && cd build
-cmake ..
-make -j$(nproc)
-
-# 运行
+cd frontend-user && mkdir build && cd build
+cmake .. && make -j$(nproc)
 ./XMLToDocxConverter
 ```
 
-### 方式三：Docker 运行
-
+**Windows (MSYS2 UCRT64):**
 ```bash
-docker-compose up --build -d
-
-# 访问 noVNC 界面
-# http://localhost:8088
+pacman -S mingw-w64-ucrt-x86_64-{gcc,cmake,make,qt6-base,qscintilla-qt6,libzip,pkg-config}
+cd frontend-user && mkdir build && cd build
+cmake -G "MinGW Makefiles" .. && mingw32-make -j$(nproc)
+./XMLToDocxConverter.exe
 ```
 
 ## Services
