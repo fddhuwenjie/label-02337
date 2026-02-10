@@ -4,12 +4,39 @@
 
 ## How to Run
 
+### 方式一：一键运行脚本（推荐）
+
 ```bash
-# 使用 Docker Compose 构建并运行
+cd frontend-user
+chmod +x run.sh
+./run.sh
+```
+
+脚本会自动检测系统、安装依赖、编译并运行程序。
+
+### 方式二：手动编译运行
+
+```bash
+# 安装依赖 (Ubuntu/Debian)
+sudo apt-get install build-essential cmake pkg-config qt6-base-dev libqt6xml6 libqscintilla2-qt6-dev libzip-dev
+
+# 编译
+cd frontend-user
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+
+# 运行
+./XMLToDocxConverter
+```
+
+### 方式三：Docker 运行
+
+```bash
 docker-compose up --build -d
 
-# 访问应用
-# 前端界面: http://localhost:8088
+# 访问 noVNC 界面
+# http://localhost:8088
 ```
 
 ## Services
@@ -36,6 +63,40 @@ docker-compose up --build -d
 - **代码编辑器**: 使用 QScintilla 实现语法高亮的 XML 编辑器
 - **DOCX导出**: 支持导出为标准 DOCX 文档
 - **日志记录**: 完整的日志记录功能，便于调试和问题追踪
+
+## 依赖要求
+
+### 必需依赖
+
+| 依赖 | 最低版本 | 说明 |
+|------|----------|------|
+| CMake | 3.16+ | 构建系统 |
+| Qt6 | 6.2+ | GUI 框架 (Core, Widgets, Xml 模块) |
+| QScintilla2 | 2.13+ | 代码编辑器组件 (Qt6 版本) |
+| libzip | 1.7+ | ZIP 文件处理库 |
+| GCC/Clang | C++17 支持 | 编译器 |
+
+### 各平台安装命令
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install build-essential cmake pkg-config qt6-base-dev libqt6xml6 libqscintilla2-qt6-dev libzip-dev
+```
+
+**Fedora/RHEL:**
+```bash
+sudo dnf install gcc-c++ cmake pkgconfig qt6-qtbase-devel qscintilla-qt6-devel libzip-devel
+```
+
+**Arch Linux:**
+```bash
+sudo pacman -S base-devel cmake qt6-base qscintilla-qt6 libzip
+```
+
+**macOS (Homebrew):**
+```bash
+brew install cmake qt@6 qscintilla2 libzip
+```
 
 ## 技术栈
 

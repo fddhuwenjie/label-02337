@@ -10,6 +10,9 @@ out/
 *.swo
 *~
 
+# Kiro
+.kiro/
+
 # Qt generated files
 *.pro.user
 *.qm

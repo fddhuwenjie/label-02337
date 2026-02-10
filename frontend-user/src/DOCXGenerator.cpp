@@ -1,16 +1,40 @@
+/**
+ * @file DOCXGenerator.cpp
+ * @brief DOCX 文档生成器实现
+ * 
+ * 本文件实现了将 DocumentModel 转换为 OOXML 格式的 DOCX 文件。
+ * 使用 libzip 库进行 ZIP 打包。
+ * 
+ * @author Developer
+ * @date 2024
+ */
+
 #include "DOCXGenerator.h"
 #include <QFile>
 #include <QTextStream>
 #include <QTemporaryDir>
-#include <QProcess>
+#include <QFileInfo>
 #include <QDebug>
 #include <zip.h>
 
+/**
+ * @brief 构造函数
+ */
 DOCXGenerator::DOCXGenerator() : m_imageCount(0) {}
 
+/**
+ * @brief 析构函数
+ */
 DOCXGenerator::~DOCXGenerator() {}
 
+/**
+ * @brief 生成 DOCX 文件
+ * @param model 文档模型
+ * @param outputPath 输出文件路径
+ * @return 成功返回 true，失败返回 false
+ */
 bool DOCXGenerator::generate(const DocumentModel &model, const QString &outputPath) {
+    // 创建临时目录用于构建 DOCX 结构
     QTemporaryDir tempDir;
     if (!tempDir.isValid()) {
         m_lastError = "无法创建临时目录";
@@ -20,21 +44,30 @@ bool DOCXGenerator::generate(const DocumentModel &model, const QString &outputPa
     QString tempPath = tempDir.path();
     m_imageCount = 0;
     m_imageRelations.clear();
+    m_imagePaths.clear();
     
+    // 按顺序创建 DOCX 各部分
     if (!createDocxStructure(tempPath)) return false;
     if (!writeContentTypes(tempPath)) return false;
     if (!writeRelationships(tempPath)) return false;
     if (!writeStyles(tempPath)) return false;
     if (!writeDocument(tempPath, model)) return false;
+    if (!copyImages(tempPath)) return false;  // 复制图片文件
     if (!writeDocumentRelationships(tempPath)) return false;
     if (!packageDocx(tempPath, outputPath)) return false;
     
     return true;
 }
 
+/**
+ * @brief 创建 DOCX 目录结构
+ * @param tempDir 临时目录路径
+ * @return 成功返回 true
+ */
 bool DOCXGenerator::createDocxStructure(const QString &tempDir) {
     QDir dir(tempDir);
     
+    // 创建必要的子目录
     if (!dir.mkpath("_rels")) {
         m_lastError = "无法创建 _rels 目录";
         return false;
@@ -51,6 +84,11 @@ bool DOCXGenerator::createDocxStructure(const QString &tempDir) {
     return true;
 }
 
+/**
+ * @brief 写入 [Content_Types].xml
+ * @param tempDir 临时目录路径
+ * @return 成功返回 true
+ */
 bool DOCXGenerator::writeContentTypes(const QString &tempDir) {
     QString content = R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -59,6 +97,8 @@ bool DOCXGenerator::writeContentTypes(const QString &tempDir) {
     <Default Extension="png" ContentType="image/png"/>
     <Default Extension="jpg" ContentType="image/jpeg"/>
     <Default Extension="jpeg" ContentType="image/jpeg"/>
+    <Default Extension="gif" ContentType="image/gif"/>
+    <Default Extension="bmp" ContentType="image/bmp"/>
     <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
     <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
 </Types>)";
@@ -77,6 +117,11 @@ bool DOCXGenerator::writeContentTypes(const QString &tempDir) {
     return true;
 }
 
+/**
+ * @brief 写入根关系文件 _rels/.rels
+ * @param tempDir 临时目录路径
+ * @return 成功返回 true
+ */
 bool DOCXGenerator::writeRelationships(const QString &tempDir) {
     QString content = R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
@@ -97,6 +142,11 @@ bool DOCXGenerator::writeRelationships(const QString &tempDir) {
     return true;
 }
 
+/**
+ * @brief 写入样式文件 word/styles.xml
+ * @param tempDir 临时目录路径
+ * @return 成功返回 true
+ */
 bool DOCXGenerator::writeStyles(const QString &tempDir) {
     QString content = R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -125,10 +175,16 @@ bool DOCXGenerator::writeStyles(const QString &tempDir) {
     return true;
 }
 
-
+/**
+ * @brief 写入主文档 word/document.xml
+ * @param tempDir 临时目录路径
+ * @param model 文档模型
+ * @return 成功返回 true
+ */
 bool DOCXGenerator::writeDocument(const QString &tempDir, const DocumentModel &model) {
     QString bodyContent;
     
+    // 遍历所有文档元素并生成对应的 OOXML
     for (const auto &elem : model.elements) {
         switch (elem.type) {
             case ElementType::Paragraph:
@@ -136,7 +192,7 @@ bool DOCXGenerator::writeDocument(const QString &tempDir, const DocumentModel &m
                 break;
             case ElementType::Image:
                 m_imageCount++;
-                bodyContent += writeImage(elem.image, m_imageCount);
+                bodyContent += writeImage(elem.image, m_imageCount, tempDir);
                 break;
             case ElementType::Table:
                 bodyContent += writeTable(elem.table);
@@ -144,6 +200,7 @@ bool DOCXGenerator::writeDocument(const QString &tempDir, const DocumentModel &m
         }
     }
     
+    // 构建完整的 document.xml
     QString content = QString(R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
             xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
@@ -173,6 +230,35 @@ bool DOCXGenerator::writeDocument(const QString &tempDir, const DocumentModel &m
     return true;
 }
 
+/**
+ * @brief 复制图片文件到 DOCX 的 media 目录
+ * @param tempDir 临时目录路径
+ * @return 成功返回 true
+ */
+bool DOCXGenerator::copyImages(const QString &tempDir) {
+    for (auto it = m_imagePaths.begin(); it != m_imagePaths.end(); ++it) {
+        QString srcPath = it.value();
+        QString destPath = tempDir + "/word/" + it.key();
+        
+        // 检查源文件是否存在
+        if (!QFile::exists(srcPath)) {
+            qWarning() << "图片文件不存在:" << srcPath;
+            continue;  // 跳过不存在的图片，继续处理其他图片
+        }
+        
+        // 复制图片文件
+        if (!QFile::copy(srcPath, destPath)) {
+            qWarning() << "无法复制图片:" << srcPath << "->" << destPath;
+        }
+    }
+    return true;
+}
+
+/**
+ * @brief 写入文档关系文件 word/_rels/document.xml.rels
+ * @param tempDir 临时目录路径
+ * @return 成功返回 true
+ */
 bool DOCXGenerator::writeDocumentRelationships(const QString &tempDir) {
     QString relationships = R"(<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>)";
     
@@ -202,10 +288,16 @@ bool DOCXGenerator::writeDocumentRelationships(const QString &tempDir) {
     return true;
 }
 
+/**
+ * @brief 生成段落的 OOXML
+ * @param para 段落元素
+ * @return OOXML 字符串
+ */
 QString DOCXGenerator::writeParagraph(const ParagraphElement &para) {
     QString alignment = alignmentToOOXML(para.style.alignment);
     QString runProps = styleToOOXML(para.style);
     
+    // 生成段落间距属性
     QString spacing;
     if (para.style.spacingBefore > 0 || para.style.spacingAfter > 0) {
         spacing = QString(R"(<w:spacing w:before="%1" w:after="%2"/>)")
@@ -228,11 +320,28 @@ QString DOCXGenerator::writeParagraph(const ParagraphElement &para) {
         </w:p>)").arg(alignment, spacing, runProps, para.text.toHtmlEscaped());
 }
 
-QString DOCXGenerator::writeImage(const ImageElement &image, int imageIndex) {
-    QString rId = QString("rId%1").arg(imageIndex + 10);
-    m_imageRelations[rId] = QString("media/image%1.png").arg(imageIndex);
+/**
+ * @brief 生成图片的 OOXML 并记录图片路径
+ * @param image 图片元素
+ * @param imageIndex 图片索引
+ * @param tempDir 临时目录路径
+ * @return OOXML 字符串
+ */
+QString DOCXGenerator::writeImage(const ImageElement &image, int imageIndex, const QString &tempDir) {
+    // 获取图片文件扩展名
+    QFileInfo fileInfo(image.src);
+    QString ext = fileInfo.suffix().toLower();
+    if (ext.isEmpty()) ext = "png";
     
-    // 默认尺寸 (EMU: 1 inch = 914400 EMU)
+    // 生成关系 ID 和目标路径
+    QString rId = QString("rId%1").arg(imageIndex + 10);
+    QString mediaPath = QString("media/image%1.%2").arg(imageIndex).arg(ext);
+    
+    // 记录图片关系和源路径
+    m_imageRelations[rId] = mediaPath;
+    m_imagePaths[mediaPath] = image.src;
+    
+    // 计算图片尺寸 (EMU: 1 像素 = 9525 EMU)
     int width = image.width > 0 ? image.width * 9525 : 3000000;
     int height = image.height > 0 ? image.height * 9525 : 2000000;
     
@@ -279,41 +388,69 @@ QString DOCXGenerator::writeImage(const ImageElement &image, int imageIndex) {
         </w:p>)").arg(alignment).arg(width).arg(height).arg(imageIndex).arg(rId);
 }
 
+/**
+ * @brief 生成表格的 OOXML，支持单元格合并
+ * @param table 表格元素
+ * @return OOXML 字符串
+ */
 QString DOCXGenerator::writeTable(const TableElement &table) {
     QString rows;
     
+    // 遍历所有行
     for (int i = 0; i < table.rows && i < table.cells.size(); ++i) {
         QString cells;
         
+        // 遍历所有列
         for (int j = 0; j < table.cols && j < table.cells[i].size(); ++j) {
             const CellElement &cell = table.cells[i][j];
-            QString cellAlign = alignmentToOOXML(cell.alignment);
-            QString vAlign;
-            if (cell.valign == "middle") {
-                vAlign = R"(<w:vAlign w:val="center"/>)";
-            } else if (cell.valign == "bottom") {
-                vAlign = R"(<w:vAlign w:val="bottom"/>)";
+            
+            // 生成单元格属性
+            QString cellProps;
+            
+            // 单元格宽度
+            cellProps += R"(<w:tcW w:w="0" w:type="auto"/>)";
+            
+            // 水平合并 (colspan)
+            if (cell.colspan > 1) {
+                cellProps += QString(R"(<w:gridSpan w:val="%1"/>)").arg(cell.colspan);
             }
+            
+            // 垂直合并 (rowspan) - 起始单元格
+            if (cell.rowspan > 1) {
+                cellProps += R"(<w:vMerge w:val="restart"/>)";
+            }
+            
+            // 垂直对齐
+            if (cell.valign == "middle") {
+                cellProps += R"(<w:vAlign w:val="center"/>)";
+            } else if (cell.valign == "bottom") {
+                cellProps += R"(<w:vAlign w:val="bottom"/>)";
+            }
+            
+            // 生成单元格内容
+            QString cellAlign = alignmentToOOXML(cell.alignment);
+            QString cellStyle = styleToOOXML(cell.style);
             
             cells += QString(R"(
                 <w:tc>
                     <w:tcPr>
-                        <w:tcW w:w="0" w:type="auto"/>
                         %1
                     </w:tcPr>
                     <w:p>
                         <w:pPr>%2</w:pPr>
                         <w:r>
-                            <w:t>%3</w:t>
+                            <w:rPr>%3</w:rPr>
+                            <w:t>%4</w:t>
                         </w:r>
                     </w:p>
-                </w:tc>)").arg(vAlign, cellAlign, cell.content.toHtmlEscaped());
+                </w:tc>)").arg(cellProps, cellAlign, cellStyle, cell.content.toHtmlEscaped());
         }
         
+        // 生成行高属性
         QString rowHeight;
         if (i < table.rowHeights.size() && table.rowHeights[i] > 0) {
             rowHeight = QString(R"(<w:trPr><w:trHeight w:val="%1"/></w:trPr>)")
-                .arg(table.rowHeights[i] * 20); // twips
+                .arg(table.rowHeights[i] * 20);  // 转换为 twips
         }
         
         rows += QString(R"(
@@ -323,10 +460,12 @@ QString DOCXGenerator::writeTable(const TableElement &table) {
             </w:tr>)").arg(rowHeight, cells);
     }
     
+    // 生成表格宽度属性
     QString tableWidth = table.widthType == "auto" 
         ? R"(<w:tblW w:w="0" w:type="auto"/>)"
         : QString(R"(<w:tblW w:w="%1" w:type="dxa"/>)").arg(table.width * 20);
     
+    // 返回完整的表格 OOXML
     return QString(R"(
         <w:tbl>
             <w:tblPr>
@@ -344,30 +483,41 @@ QString DOCXGenerator::writeTable(const TableElement &table) {
         </w:tbl>)").arg(tableWidth, rows);
 }
 
+/**
+ * @brief 将样式属性转换为 OOXML 运行属性
+ * @param style 样式属性
+ * @return OOXML 字符串
+ */
 QString DOCXGenerator::styleToOOXML(const StyleAttributes &style) {
     QString result;
     
+    // 字体
     if (style.fontFamily != "Arial") {
-        result += QString(R"(<w:rFonts w:ascii="%1" w:hAnsi="%1"/>)").arg(style.fontFamily);
+        result += QString(R"(<w:rFonts w:ascii="%1" w:hAnsi="%1" w:eastAsia="%1"/>)").arg(style.fontFamily);
     }
     
+    // 字号 (OOXML 使用半磅为单位)
     if (style.fontSize != 12) {
         int halfPoints = style.fontSize * 2;
         result += QString(R"(<w:sz w:val="%1"/><w:szCs w:val="%1"/>)").arg(halfPoints);
     }
     
+    // 颜色
     if (style.color != "#000000") {
         result += colorToOOXML(style.color);
     }
     
+    // 加粗
     if (style.bold) {
         result += R"(<w:b/>)";
     }
     
+    // 斜体
     if (style.italic) {
         result += R"(<w:i/>)";
     }
     
+    // 下划线
     if (style.underline) {
         result += R"(<w:u w:val="single"/>)";
     }
@@ -375,6 +525,11 @@ QString DOCXGenerator::styleToOOXML(const StyleAttributes &style) {
     return result;
 }
 
+/**
+ * @brief 将对齐方式转换为 OOXML
+ * @param alignment 对齐方式字符串
+ * @return OOXML 字符串
+ */
 QString DOCXGenerator::alignmentToOOXML(const QString &alignment) {
     if (alignment == "center") {
         return R"(<w:jc w:val="center"/>)";
@@ -386,14 +541,29 @@ QString DOCXGenerator::alignmentToOOXML(const QString &alignment) {
     return R"(<w:jc w:val="left"/>)";
 }
 
+/**
+ * @brief 将颜色值转换为 OOXML
+ * @param color 颜色值 (如 #FF0000)
+ * @return OOXML 字符串
+ */
 QString DOCXGenerator::colorToOOXML(const QString &color) {
     QString hex = color;
     if (hex.startsWith("#")) {
         hex = hex.mid(1);
     }
-    return QString(R"(<w:color w:val="%1"/>)").arg(hex);
+    return QString(R"(<w:color w:val="%1"/>)").arg(hex.toUpper());
 }
 
+/**
+ * @brief 将临时目录打包为 DOCX 文件
+ * 
+ * 使用 libzip 库将临时目录中的所有文件打包为 ZIP 格式的 DOCX 文件。
+ * 注意：zip_source_buffer 的第四个参数设为 1 表示 libzip 会自动释放内存。
+ * 
+ * @param tempDir 临时目录路径
+ * @param outputPath 输出文件路径
+ * @return 成功返回 true
+ */
 bool DOCXGenerator::packageDocx(const QString &tempDir, const QString &outputPath) {
     int error = 0;
     zip_t *archive = zip_open(outputPath.toUtf8().constData(), ZIP_CREATE | ZIP_TRUNCATE, &error);
@@ -403,10 +573,7 @@ bool DOCXGenerator::packageDocx(const QString &tempDir, const QString &outputPat
         return false;
     }
     
-    // 递归添加文件到 ZIP
-    QDir dir(tempDir);
-    QStringList files = dir.entryList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
-    
+    // 递归添加文件到 ZIP 的 lambda 函数
     std::function<bool(const QString&, const QString&)> addToZip = [&](const QString &basePath, const QString &relativePath) -> bool {
         QDir currentDir(basePath);
         QStringList entries = currentDir.entryList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
@@ -417,45 +584,64 @@ bool DOCXGenerator::packageDocx(const QString &tempDir, const QString &outputPat
             
             QFileInfo info(fullPath);
             if (info.isDir()) {
+                // 递归处理子目录
                 if (!addToZip(fullPath, zipPath)) {
                     return false;
                 }
             } else {
+                // 读取文件内容
                 QFile file(fullPath);
                 if (!file.open(QIODevice::ReadOnly)) {
+                    qWarning() << "无法读取文件:" << fullPath;
                     continue;
                 }
                 
                 QByteArray data = file.readAll();
                 file.close();
                 
-                zip_source_t *source = zip_source_buffer(archive, data.constData(), data.size(), 0);
+                if (data.isEmpty()) {
+                    continue;
+                }
+                
+                // 分配内存并复制数据
+                // 注意：zip_source_buffer 的 freep 参数设为 1，表示 libzip 会在完成后自动释放内存
+                // 这样可以避免内存泄漏
+                void *dataCopy = malloc(data.size());
+                if (!dataCopy) {
+                    m_lastError = "内存分配失败";
+                    zip_close(archive);
+                    return false;
+                }
+                memcpy(dataCopy, data.constData(), data.size());
+                
+                // 创建 ZIP 源，freep=1 表示 libzip 负责释放内存
+                zip_source_t *source = zip_source_buffer(archive, dataCopy, data.size(), 1);
                 if (!source) {
+                    free(dataCopy);  // 如果创建失败，手动释放
                     m_lastError = "无法创建 ZIP 源";
                     zip_close(archive);
                     return false;
                 }
                 
-                // 需要复制数据因为 zip_source_buffer 不会复制
-                char *dataCopy = new char[data.size()];
-                memcpy(dataCopy, data.constData(), data.size());
-                source = zip_source_buffer(archive, dataCopy, data.size(), 1);
-                
+                // 添加文件到 ZIP
                 if (zip_file_add(archive, zipPath.toUtf8().constData(), source, ZIP_FL_OVERWRITE | ZIP_FL_ENC_UTF_8) < 0) {
-                    zip_source_free(source);
+                    zip_source_free(source);  // 添加失败时释放源（内存由 source 管理）
                     m_lastError = QString("无法添加文件到 ZIP: %1").arg(zipPath);
                     zip_close(archive);
                     return false;
                 }
+                // 添加成功后，内存由 libzip 管理，不需要手动释放
             }
         }
         return true;
     };
     
+    // 执行打包
     if (!addToZip(tempDir, "")) {
         return false;
     }
     
+    // 关闭 ZIP 文件
     if (zip_close(archive) < 0) {
         m_lastError = "无法关闭 ZIP 文件";
         return false;

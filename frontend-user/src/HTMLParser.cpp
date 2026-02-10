@@ -406,36 +406,97 @@ QString HTMLParser::convertToXml(const QString &htmlContent) {
         return QString();
     }
     
-    // 使用 XMLParser 序列化
+    // 构建 XML 文档
     QString xml = R"(<?xml version="1.0" encoding="UTF-8"?>
 <document)";
     
     if (!model->title.isEmpty()) {
-        xml += QString(R" title="%1"").arg(model->title);
+        xml += QString(" title=\"%1\"").arg(model->title.toHtmlEscaped());
     }
     xml += ">\n";
     
+    // 遍历所有元素并序列化
     for (const auto &elem : model->elements) {
-        if (elem.type == ElementType::Paragraph) {
-            const auto &para = elem.paragraph;
-            xml += QString("    <paragraph align=\"%1\"").arg(para.style.alignment);
-            if (para.style.spacingAfter > 0) {
-                xml += QString(" spacingAfter=\"%1\"").arg(para.style.spacingAfter);
+        switch (elem.type) {
+            case ElementType::Paragraph: {
+                const auto &para = elem.paragraph;
+                xml += QString("    <paragraph align=\"%1\"").arg(para.style.alignment);
+                if (para.style.spacingBefore > 0) {
+                    xml += QString(" spacingBefore=\"%1\"").arg(para.style.spacingBefore);
+                }
+                if (para.style.spacingAfter > 0) {
+                    xml += QString(" spacingAfter=\"%1\"").arg(para.style.spacingAfter);
+                }
+                xml += ">\n";
+                xml += QString("        <text font=\"%1\" size=\"%2\" color=\"%3\"")
+                    .arg(para.style.fontFamily)
+                    .arg(para.style.fontSize)
+                    .arg(para.style.color);
+                if (para.style.bold) xml += " bold=\"true\"";
+                if (para.style.italic) xml += " italic=\"true\"";
+                if (para.style.underline) xml += " underline=\"true\"";
+                xml += ">\n";
+                xml += QString("            %1\n").arg(para.text.toHtmlEscaped());
+                xml += "        </text>\n";
+                xml += "    </paragraph>\n";
+                break;
             }
-            xml += ">\n";
-            xml += QString("        <text font=\"%1\" size=\"%2\" color=\"%3\"")
-                .arg(para.style.fontFamily)
-                .arg(para.style.fontSize)
-                .arg(para.style.color);
-            if (para.style.bold) xml += " bold=\"true\"";
-            if (para.style.italic) xml += " italic=\"true\"";
-            if (para.style.underline) xml += " underline=\"true\"";
-            xml += ">\n";
-            xml += QString("            %1\n").arg(para.text);
-            xml += "        </text>\n";
-            xml += "    </paragraph>\n";
+            
+            case ElementType::Image: {
+                const auto &img = elem.image;
+                xml += QString("    <image src=\"%1\"").arg(img.src.toHtmlEscaped());
+                if (img.width > 0) {
+                    xml += QString(" width=\"%1\"").arg(img.width);
+                }
+                if (img.height > 0) {
+                    xml += QString(" height=\"%1\"").arg(img.height);
+                }
+                if (img.alignment != "left") {
+                    xml += QString(" align=\"%1\"").arg(img.alignment);
+                }
+                xml += "/>\n";
+                break;
+            }
+            
+            case ElementType::Table: {
+                const auto &tbl = elem.table;
+                xml += QString("    <table rows=\"%1\" cols=\"%2\" width=\"%3\">\n")
+                    .arg(tbl.rows)
+                    .arg(tbl.cols)
+                    .arg(tbl.widthType == "auto" ? "auto" : QString::number(tbl.width));
+                
+                for (int i = 0; i < tbl.rows && i < tbl.cells.size(); ++i) {
+                    xml += "        <row";
+                    if (i < tbl.rowHeights.size() && tbl.rowHeights[i] > 0) {
+                        xml += QString(" height=\"%1\"").arg(tbl.rowHeights[i]);
+                    }
+                    xml += ">\n";
+                    
+                    for (int j = 0; j < tbl.cols && j < tbl.cells[i].size(); ++j) {
+                        const auto &cell = tbl.cells[i][j];
+                        xml += QString("            <cell align=\"%1\"").arg(cell.alignment);
+                        if (cell.valign != "top") {
+                            xml += QString(" valign=\"%1\"").arg(cell.valign);
+                        }
+                        if (cell.colspan > 1) {
+                            xml += QString(" colspan=\"%1\"").arg(cell.colspan);
+                        }
+                        if (cell.rowspan > 1) {
+                            xml += QString(" rowspan=\"%1\"").arg(cell.rowspan);
+                        }
+                        if (cell.style.bold) {
+                            xml += " bold=\"true\"";
+                        }
+                        xml += QString(">%1</cell>\n").arg(cell.content.toHtmlEscaped());
+                    }
+                    
+                    xml += "        </row>\n";
+                }
+                
+                xml += "    </table>\n";
+                break;
+            }
         }
-        // ... 其他元素类型
     }
     
     xml += "</document>\n";
