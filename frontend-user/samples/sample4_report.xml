@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document title="项目报告">
+    <!-- 报告标题 -->
+    <paragraph align="center" spacingAfter="100">
+        <text font="Arial" size="26" color="#2c3e50" bold="true">
+            2024年度项目总结报告
+        </text>
+    </paragraph>
+
+    <paragraph align="center" spacingAfter="400">
+        <text font="Arial" size="12" color="#7f8c8d">
+            技术研发部 | 2024年12月
+        </text>
+    </paragraph>
+
+    <!-- 一、项目概述 -->
+    <paragraph align="left" spacingAfter="150">
+        <text font="Arial" size="16" color="#2980b9" bold="true">
+            一、项目概述
+        </text>
+    </paragraph>
+
+    <paragraph align="justify" spacingAfter="200">
+        <text font="Arial" size="11" color="#333333">
+            本年度共完成3个重点项目的研发工作，涵盖前端架构升级、后端性能优化、移动端适配等多个技术领域。项目整体进度符合预期，各项指标均达到或超过既定目标。
+        </text>
+    </paragraph>
+
+    <!-- 二、完成情况 -->
+    <paragraph align="left" spacingAfter="150">
+        <text font="Arial" size="16" color="#2980b9" bold="true">
+            二、项目完成情况
+        </text>
+    </paragraph>
+
+    <table cols="4" width="auto" colWidths="150,120,100,130">
+        <row height="35">
+            <cell align="center" valign="middle" font="Arial" size="11" color="#ffffff" bold="true">
+                项目名称
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="11" color="#ffffff" bold="true">
+                负责人
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="11" color="#ffffff" bold="true">
+                完成度
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="11" color="#ffffff" bold="true">
+                状态
+            </cell>
+        </row>
+        <row height="30">
+            <cell align="left" valign="middle" font="Arial" size="10" color="#333333">
+                前端架构升级
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#333333">
+                张三
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#27ae60" bold="true">
+                100%
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#27ae60">
+                已完成
+            </cell>
+        </row>
+        <row height="30">
+            <cell align="left" valign="middle" font="Arial" size="10" color="#333333">
+                后端性能优化
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#333333">
+                李四
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#27ae60" bold="true">
+                100%
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#27ae60">
+                已完成
+            </cell>
+        </row>
+        <row height="30">
+            <cell align="left" valign="middle" font="Arial" size="10" color="#333333">
+                移动端适配
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#333333">
+                王五
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#f39c12" bold="true">
+                85%
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#f39c12">
+                进行中
+            </cell>
+        </row>
+    </table>
+
+    <!-- 三、总结 -->
+    <paragraph align="left" spacingBefore="300" spacingAfter="150">
+        <text font="Arial" size="16" color="#2980b9" bold="true">
+            三、总结与展望
+        </text>
+    </paragraph>
+
+    <paragraph align="justify" spacingAfter="200">
+        <text font="Arial" size="11" color="#333333">
+            本年度项目整体执行顺利，团队协作高效。展望下一年度，我们将继续深化技术创新，提升产品竞争力，为公司发展贡献更大力量。
+        </text>
+    </paragraph>
+
+    <!-- 签名 -->
+    <paragraph align="right" spacingBefore="400">
+        <text font="Arial" size="11" color="#333333">
+            报告人：技术研发部
+        </text>
+    </paragraph>
+    <paragraph align="right">
+        <text font="Arial" size="11" color="#333333">
+            日期：2024年12月31日
+        </text>
+    </paragraph>
+</document>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document title="销售订单">
+    <!-- 公司信息 -->
+    <paragraph align="center" spacingAfter="50">
+        <text font="Arial" size="20" color="#2c3e50" bold="true">
+            XX科技有限公司
+        </text>
+    </paragraph>
+    <paragraph align="center" spacingAfter="300">
+        <text font="Arial" size="10" color="#7f8c8d">
+            地址：北京市海淀区中关村大街1号 | 电话：010-12345678
+        </text>
+    </paragraph>
+
+    <!-- 订单标题 -->
+    <paragraph align="center" spacingAfter="200">
+        <text font="Arial" size="18" color="#e74c3c" bold="true">
+            销 售 订 单
+        </text>
+    </paragraph>
+
+    <!-- 订单信息 -->
+    <paragraph align="left" spacingAfter="100">
+        <text font="Arial" size="11" color="#333333">订单编号：</text>
+        <text font="Arial" size="11" color="#2980b9" bold="true">SO-2024-001234</text>
+    </paragraph>
+    <paragraph align="left" spacingAfter="100">
+        <text font="Arial" size="11" color="#333333">客户名称：</text>
+        <text font="Arial" size="11" color="#333333">ABC贸易公司</text>
+    </paragraph>
+    <paragraph align="left" spacingAfter="200">
+        <text font="Arial" size="11" color="#333333">订单日期：</text>
+        <text font="Arial" size="11" color="#333333">2024-12-15</text>
+    </paragraph>
+
+    <!-- 商品明细 -->
+    <table cols="5" width="auto" colWidths="60,180,80,80,100">
+        <row height="35">
+            <cell align="center" valign="middle" font="Arial" size="10" color="#ffffff" bold="true">
+                序号
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#ffffff" bold="true">
+                商品名称
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#ffffff" bold="true">
+                单价
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#ffffff" bold="true">
+                数量
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#ffffff" bold="true">
+                金额
+            </cell>
+        </row>
+        <row height="30">
+            <cell align="center" valign="middle" font="Arial" size="10" color="#333333">1</cell>
+            <cell align="left" valign="middle" font="Arial" size="10" color="#333333">笔记本电脑 Pro 15</cell>
+            <cell align="right" valign="middle" font="Arial" size="10" color="#333333">8,999.00</cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#333333">2</cell>
+            <cell align="right" valign="middle" font="Arial" size="10" color="#333333">17,998.00</cell>
+        </row>
+        <row height="30">
+            <cell align="center" valign="middle" font="Arial" size="10" color="#333333">2</cell>
+            <cell align="left" valign="middle" font="Arial" size="10" color="#333333">无线鼠标套装</cell>
+            <cell align="right" valign="middle" font="Arial" size="10" color="#333333">299.00</cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#333333">5</cell>
+            <cell align="right" valign="middle" font="Arial" size="10" color="#333333">1,495.00</cell>
+        </row>
+        <row height="30">
+            <cell align="center" valign="middle" font="Arial" size="10" color="#333333">3</cell>
+            <cell align="left" valign="middle" font="Arial" size="10" color="#333333">USB-C扩展坞</cell>
+            <cell align="right" valign="middle" font="Arial" size="10" color="#333333">459.00</cell>
+            <cell align="center" valign="middle" font="Arial" size="10" color="#333333">3</cell>
+            <cell align="right" valign="middle" font="Arial" size="10" color="#333333">1,377.00</cell>
+        </row>
+    </table>
+
+    <!-- 合计 -->
+    <paragraph align="right" spacingBefore="200">
+        <text font="Arial" size="12" color="#333333">商品合计：</text>
+        <text font="Arial" size="12" color="#333333" bold="true">¥ 20,870.00</text>
+    </paragraph>
+    <paragraph align="right">
+        <text font="Arial" size="12" color="#333333">运费：</text>
+        <text font="Arial" size="12" color="#333333">¥ 0.00</text>
+    </paragraph>
+    <paragraph align="right" spacingAfter="300">
+        <text font="Arial" size="14" color="#e74c3c" bold="true">应付总额：¥ 20,870.00</text>
+    </paragraph>
+
+    <!-- 备注 -->
+    <paragraph align="left">
+        <text font="Arial" size="10" color="#7f8c8d" italic="true">
+            备注：请于7个工作日内完成付款，逾期订单将自动取消。
+        </text>
+    </paragraph>
+</document>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document title="基础文本示例">
+    <!-- 标题 -->
+    <paragraph align="center" spacingAfter="300">
+        <text font="Arial" size="24" color="#1a5276" bold="true">
+            基础文本格式演示
+        </text>
+    </paragraph>
+
+    <!-- 普通段落 -->
+    <paragraph align="left" spacingAfter="200">
+        <text font="Arial" size="12" color="#000000">
+            这是一段普通的左对齐文本，展示了基本的段落格式。
+        </text>
+    </paragraph>
+
+    <!-- 居中段落 -->
+    <paragraph align="center" spacingAfter="200">
+        <text font="Arial" size="12" color="#666666" italic="true">
+            这是居中对齐的斜体文本
+        </text>
+    </paragraph>
+
+    <!-- 右对齐段落 -->
+    <paragraph align="right" spacingAfter="200">
+        <text font="Arial" size="10" color="#999999">
+            右对齐文本 - 2024年
+        </text>
+    </paragraph>
+</document>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document title="表格示例">
+    <paragraph align="center" spacingAfter="300">
+        <text font="Arial" size="22" color="#2c3e50" bold="true">
+            产品价格表
+        </text>
+    </paragraph>
+
+    <!-- 产品表格 -->
+    <table cols="4" width="auto" colWidths="120,200,100,100">
+        <row height="40">
+            <cell align="center" valign="middle" font="Arial" size="12" color="#ffffff" bold="true">
+                产品编号
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="12" color="#ffffff" bold="true">
+                产品名称
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="12" color="#ffffff" bold="true">
+                单价(元)
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="12" color="#ffffff" bold="true">
+                库存
+            </cell>
+        </row>
+        <row height="35">
+            <cell align="center" valign="middle" font="Arial" size="11" color="#333333">
+                P001
+            </cell>
+            <cell align="left" valign="middle" font="Arial" size="11" color="#333333">
+                无线蓝牙耳机
+            </cell>
+            <cell align="right" valign="middle" font="Arial" size="11" color="#e74c3c">
+                299.00
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="11" color="#27ae60">
+                156
+            </cell>
+        </row>
+        <row height="35">
+            <cell align="center" valign="middle" font="Arial" size="11" color="#333333">
+                P002
+            </cell>
+            <cell align="left" valign="middle" font="Arial" size="11" color="#333333">
+                机械键盘 RGB背光
+            </cell>
+            <cell align="right" valign="middle" font="Arial" size="11" color="#e74c3c">
+                459.00
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="11" color="#27ae60">
+                89
+            </cell>
+        </row>
+        <row height="35">
+            <cell align="center" valign="middle" font="Arial" size="11" color="#333333">
+                P003
+            </cell>
+            <cell align="left" valign="middle" font="Arial" size="11" color="#333333">
+                27寸4K显示器
+            </cell>
+            <cell align="right" valign="middle" font="Arial" size="11" color="#e74c3c">
+                2199.00
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="11" color="#f39c12">
+                23
+            </cell>
+        </row>
+        <row height="35">
+            <cell align="center" valign="middle" font="Arial" size="11" color="#333333">
+                P004
+            </cell>
+            <cell align="left" valign="middle" font="Arial" size="11" color="#333333">
+                无线鼠标 静音版
+            </cell>
+            <cell align="right" valign="middle" font="Arial" size="11" color="#e74c3c">
+                129.00
+            </cell>
+            <cell align="center" valign="middle" font="Arial" size="11" color="#27ae60">
+                342
+            </cell>
+        </row>
+    </table>
+
+    <paragraph align="right" spacingBefore="200">
+        <text font="Arial" size="10" color="#7f8c8d" italic="true">
+            * 价格仅供参考，以实际为准
+        </text>
+    </paragraph>
+</document>
