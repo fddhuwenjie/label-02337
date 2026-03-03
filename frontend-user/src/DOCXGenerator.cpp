@@ -50,9 +50,12 @@ bool DOCXGenerator::generate(const DocumentModel &model, const QString &outputPa
     if (!createDocxStructure(tempPath)) return false;
     if (!writeContentTypes(tempPath)) return false;
     if (!writeRelationships(tempPath)) return false;
+    if (!writeDocProps(tempPath)) return false;
+    if (!writeSettings(tempPath)) return false;
+    if (!writeFontTable(tempPath)) return false;
     if (!writeStyles(tempPath)) return false;
     if (!writeDocument(tempPath, model)) return false;
-    if (!copyImages(tempPath)) return false;  // 复制图片文件
+    if (!copyImages(tempPath)) return false;
     if (!writeDocumentRelationships(tempPath)) return false;
     if (!packageDocx(tempPath, outputPath)) return false;
     
@@ -80,6 +83,10 @@ bool DOCXGenerator::createDocxStructure(const QString &tempDir) {
         m_lastError = "无法创建 word/media 目录";
         return false;
     }
+    if (!dir.mkpath("docProps")) {
+        m_lastError = "无法创建 docProps 目录";
+        return false;
+    }
     
     return true;
 }
@@ -101,17 +108,19 @@ bool DOCXGenerator::writeContentTypes(const QString &tempDir) {
     <Default Extension="bmp" ContentType="image/bmp"/>
     <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
     <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+    <Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>
+    <Override PartName="/word/fontTable.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>
+    <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+    <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
 </Types>)";
     
     QFile file(tempDir + "/[Content_Types].xml");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::WriteOnly)) {
         m_lastError = "无法创建 [Content_Types].xml";
         return false;
     }
     
-    QTextStream out(&file);
-    out.setEncoding(QStringConverter::Utf8);
-    out << content;
+    file.write(content.toUtf8());
     file.close();
     
     return true;
@@ -126,17 +135,127 @@ bool DOCXGenerator::writeRelationships(const QString &tempDir) {
     QString content = R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
     <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+    <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+    <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
 </Relationships>)";
     
     QFile file(tempDir + "/_rels/.rels");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::WriteOnly)) {
         m_lastError = "无法创建 _rels/.rels";
         return false;
     }
     
-    QTextStream out(&file);
-    out.setEncoding(QStringConverter::Utf8);
-    out << content;
+    file.write(content.toUtf8());
+    file.close();
+    
+    return true;
+}
+
+/**
+ * @brief 写入文档属性文件 docProps/core.xml 和 docProps/app.xml
+ * @param tempDir 临时目录路径
+ * @return 成功返回 true
+ */
+bool DOCXGenerator::writeDocProps(const QString &tempDir) {
+    // core.xml - 核心属性
+    QString coreContent = R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
+                   xmlns:dc="http://purl.org/dc/elements/1.1/"
+                   xmlns:dcterms="http://purl.org/dc/terms/"
+                   xmlns:dcmitype="http://purl.org/dc/dcmitype/"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <dc:creator>XMLToDocxConverter</dc:creator>
+    <dc:language>zh-CN</dc:language>
+</cp:coreProperties>)";
+    
+    QFile coreFile(tempDir + "/docProps/core.xml");
+    if (!coreFile.open(QIODevice::WriteOnly)) {
+        m_lastError = "无法创建 docProps/core.xml";
+        return false;
+    }
+    coreFile.write(coreContent.toUtf8());
+    coreFile.close();
+    
+    // app.xml - 应用程序属性
+    QString appContent = R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
+    <Application>XMLToDocxConverter</Application>
+</Properties>)";
+    
+    QFile appFile(tempDir + "/docProps/app.xml");
+    if (!appFile.open(QIODevice::WriteOnly)) {
+        m_lastError = "无法创建 docProps/app.xml";
+        return false;
+    }
+    appFile.write(appContent.toUtf8());
+    appFile.close();
+    
+    return true;
+}
+
+/**
+ * @brief 写入设置文件 word/settings.xml
+ * @param tempDir 临时目录路径
+ * @return 成功返回 true
+ */
+bool DOCXGenerator::writeSettings(const QString &tempDir) {
+    QString content = R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:zoom w:percent="100"/>
+    <w:defaultTabStop w:val="720"/>
+    <w:characterSpacingControl w:val="doNotCompress"/>
+    <w:compat>
+        <w:useFELayout/>
+    </w:compat>
+</w:settings>)";
+    
+    QFile file(tempDir + "/word/settings.xml");
+    if (!file.open(QIODevice::WriteOnly)) {
+        m_lastError = "无法创建 word/settings.xml";
+        return false;
+    }
+    file.write(content.toUtf8());
+    file.close();
+    
+    return true;
+}
+
+/**
+ * @brief 写入字体表文件 word/fontTable.xml
+ * @param tempDir 临时目录路径
+ * @return 成功返回 true
+ */
+bool DOCXGenerator::writeFontTable(const QString &tempDir) {
+    QString content = R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+    <w:font w:name="Times New Roman">
+        <w:charset w:val="00"/>
+        <w:family w:val="roman"/>
+        <w:pitch w:val="variable"/>
+    </w:font>
+    <w:font w:name="宋体">
+        <w:charset w:val="86"/>
+        <w:family w:val="auto"/>
+        <w:pitch w:val="variable"/>
+    </w:font>
+    <w:font w:name="Arial">
+        <w:charset w:val="00"/>
+        <w:family w:val="swiss"/>
+        <w:pitch w:val="variable"/>
+    </w:font>
+    <w:font w:name="Calibri">
+        <w:charset w:val="00"/>
+        <w:family w:val="swiss"/>
+        <w:pitch w:val="variable"/>
+    </w:font>
+</w:fonts>)";
+    
+    QFile file(tempDir + "/word/fontTable.xml");
+    if (!file.open(QIODevice::WriteOnly)) {
+        m_lastError = "无法创建 word/fontTable.xml";
+        return false;
+    }
+    file.write(content.toUtf8());
     file.close();
     
     return true;
@@ -153,23 +272,27 @@ bool DOCXGenerator::writeStyles(const QString &tempDir) {
     <w:docDefaults>
         <w:rPrDefault>
             <w:rPr>
-                <w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="SimSun" w:cs="Arial"/>
+                <w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="宋体" w:cs="Arial"/>
                 <w:sz w:val="24"/>
                 <w:szCs w:val="24"/>
             </w:rPr>
         </w:rPrDefault>
     </w:docDefaults>
+    <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+        <w:name w:val="Normal"/>
+        <w:rPr>
+            <w:rFonts w:eastAsia="宋体"/>
+        </w:rPr>
+    </w:style>
 </w:styles>)";
     
     QFile file(tempDir + "/word/styles.xml");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::WriteOnly)) {
         m_lastError = "无法创建 word/styles.xml";
         return false;
     }
     
-    QTextStream out(&file);
-    out.setEncoding(QStringConverter::Utf8);
-    out << content;
+    file.write(content.toUtf8());
     file.close();
     
     return true;
@@ -217,14 +340,12 @@ bool DOCXGenerator::writeDocument(const QString &tempDir, const DocumentModel &m
 </w:document>)").arg(bodyContent);
     
     QFile file(tempDir + "/word/document.xml");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::WriteOnly)) {
         m_lastError = "无法创建 word/document.xml";
         return false;
     }
     
-    QTextStream out(&file);
-    out.setEncoding(QStringConverter::Utf8);
-    out << content;
+    file.write(content.toUtf8());
     file.close();
     
     return true;
@@ -260,29 +381,27 @@ bool DOCXGenerator::copyImages(const QString &tempDir) {
  * @return 成功返回 true
  */
 bool DOCXGenerator::writeDocumentRelationships(const QString &tempDir) {
-    QString relationships = R"(<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>)";
+    QString relationships;
+    relationships += R"(<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>)";
+    relationships += R"(<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>)";
+    relationships += R"(<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/fontTable" Target="fontTable.xml"/>)";
     
     // 添加图片关系
     for (auto it = m_imageRelations.begin(); it != m_imageRelations.end(); ++it) {
-        relationships += QString(R"(
-    <Relationship Id="%1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="%2"/>)")
+        relationships += QString(R"(<Relationship Id="%1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="%2"/>)")
             .arg(it.key(), it.value());
     }
     
     QString content = QString(R"(<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-    %1
-</Relationships>)").arg(relationships);
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">%1</Relationships>)").arg(relationships);
     
     QFile file(tempDir + "/word/_rels/document.xml.rels");
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if (!file.open(QIODevice::WriteOnly)) {
         m_lastError = "无法创建 word/_rels/document.xml.rels";
         return false;
     }
     
-    QTextStream out(&file);
-    out.setEncoding(QStringConverter::Utf8);
-    out << content;
+    file.write(content.toUtf8());
     file.close();
     
     return true;
@@ -296,13 +415,15 @@ bool DOCXGenerator::writeDocumentRelationships(const QString &tempDir) {
 QString textRunToOOXML(const TextRun &run) {
     QString result;
     
-    if (run.fontFamily != "Arial") {
-        result += QString(R"(<w:rFonts w:ascii="%1" w:hAnsi="%1" w:eastAsia="%1"/>)").arg(run.fontFamily);
-    }
-    if (run.fontSize != 12) {
-        int halfPoints = run.fontSize * 2;
-        result += QString(R"(<w:sz w:val="%1"/><w:szCs w:val="%1"/>)").arg(halfPoints);
-    }
+    // 字体 - 西文使用指定字体，东亚使用宋体确保兼容性
+    QString fontFamily = run.fontFamily;
+    result += QString(R"(<w:rFonts w:ascii="%1" w:hAnsi="%1" w:eastAsia="宋体" w:cs="%1"/>)")
+        .arg(fontFamily);
+    
+    // 字号
+    int halfPoints = run.fontSize * 2;
+    result += QString(R"(<w:sz w:val="%1"/><w:szCs w:val="%1"/>)").arg(halfPoints);
+    
     if (run.color != "#000000") {
         QString hex = run.color;
         if (hex.startsWith("#")) hex = hex.mid(1);
@@ -558,16 +679,14 @@ QString DOCXGenerator::writeTable(const TableElement &table) {
 QString DOCXGenerator::styleToOOXML(const StyleAttributes &style) {
     QString result;
     
-    // 字体
-    if (style.fontFamily != "Arial") {
-        result += QString(R"(<w:rFonts w:ascii="%1" w:hAnsi="%1" w:eastAsia="%1"/>)").arg(style.fontFamily);
-    }
+    // 字体 - 西文使用指定字体，东亚使用宋体确保兼容性
+    QString fontFamily = style.fontFamily;
+    result += QString(R"(<w:rFonts w:ascii="%1" w:hAnsi="%1" w:eastAsia="宋体" w:cs="%1"/>)")
+        .arg(fontFamily);
     
-    // 字号 (OOXML 使用半磅为单位)
-    if (style.fontSize != 12) {
-        int halfPoints = style.fontSize * 2;
-        result += QString(R"(<w:sz w:val="%1"/><w:szCs w:val="%1"/>)").arg(halfPoints);
-    }
+    // 字号 (OOXML 使用半磅为单位) - 始终设置字号
+    int halfPoints = style.fontSize * 2;
+    result += QString(R"(<w:sz w:val="%1"/><w:szCs w:val="%1"/>)").arg(halfPoints);
     
     // 颜色
     if (style.color != "#000000") {
@@ -643,7 +762,8 @@ bool DOCXGenerator::packageDocx(const QString &tempDir, const QString &outputPat
     // 递归添加文件到 ZIP 的 lambda 函数
     std::function<bool(const QString&, const QString&)> addToZip = [&](const QString &basePath, const QString &relativePath) -> bool {
         QDir currentDir(basePath);
-        QStringList entries = currentDir.entryList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot);
+        // 注意：必须包含 QDir::Hidden 以包含以 . 开头的文件（如 .rels）
+        QStringList entries = currentDir.entryList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden);
         
         for (const QString &entry : entries) {
             QString fullPath = basePath + "/" + entry;

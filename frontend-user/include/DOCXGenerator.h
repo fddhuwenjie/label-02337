@@ -39,6 +39,9 @@ private:
     bool writeDocument(const QString &tempDir, const DocumentModel &model);
     bool writeStyles(const QString &tempDir);
     bool writeRelationships(const QString &tempDir);
+    bool writeDocProps(const QString &tempDir);
+    bool writeSettings(const QString &tempDir);
+    bool writeFontTable(const QString &tempDir);
     bool writeDocumentRelationships(const QString &tempDir);
     bool copyImages(const QString &tempDir);
     bool packageDocx(const QString &tempDir, const QString &outputPath);

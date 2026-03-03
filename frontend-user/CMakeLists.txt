@@ -7,6 +7,13 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+# 确保源文件使用 UTF-8 编码
+if(MSVC)
+    add_compile_options(/utf-8)
+else()
+    add_compile_options(-finput-charset=UTF-8 -fexec-charset=UTF-8)
+endif()
+
 # Find Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Xml)
 

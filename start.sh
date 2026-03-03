@@ -1,10 +1,8 @@
 #!/bin/bash
 #
 # XML to DOCX Converter 一键启动脚本
-# Qt/C++ 桌面应用程序
+# 支持 macOS / Linux / Windows (MSYS2)
 #
-
-set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/frontend-user/build"
@@ -19,17 +17,46 @@ echo ""
 if pgrep -x "XMLToDocxConverter" > /dev/null 2>&1; then
     echo "[INFO] 关闭旧的程序实例..."
     pkill -x "XMLToDocxConverter" 2>/dev/null || true
-    sleep 0.5
+    sleep 1
 fi
 
+# 启动应用程序的函数
+launch_app() {
+    local executable="$1"
+    local platform="$2"
+    
+    echo "[INFO] 启动程序..."
+    
+    case "$platform" in
+        macos)
+            # macOS: 使用 open 命令启动，这是最可靠的方式
+            open "$executable"
+            ;;
+        linux)
+            # Linux: 后台启动
+            export QT_QPA_PLATFORM=${QT_QPA_PLATFORM:-xcb}
+            "$executable" &
+            disown 2>/dev/null || true
+            ;;
+        windows)
+            # Windows: 直接启动
+            "$executable" &
+            ;;
+    esac
+    
+    sleep 2
+    echo "[SUCCESS] 程序已启动"
+}
+
 # 检测操作系统
-if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "mingw"* ]]; then
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "mingw"* ]] || [[ "$OSTYPE" == "cygwin"* ]]; then
     # Windows MSYS2 环境
     EXECUTABLE="$BUILD_DIR/XMLToDocxConverter.exe"
+    PLATFORM="windows"
     
     if [ -f "$EXECUTABLE" ]; then
         echo "[INFO] 检测到已编译的程序，直接启动..."
-        "$EXECUTABLE"
+        launch_app "$EXECUTABLE" "$PLATFORM"
         exit 0
     fi
     
@@ -60,12 +87,10 @@ if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "mingw"* ]]; then
     mkdir -p "$BUILD_DIR" && cd "$BUILD_DIR"
 
     echo "[INFO] 编译中..."
-    cmake -G "MinGW Makefiles" .. && mingw32-make -j$(nproc)
-
-    if [ $? -eq 0 ]; then
+    if cmake -G "MinGW Makefiles" .. && mingw32-make -j$(nproc); then
         echo ""
-        echo "[SUCCESS] 编译成功，启动程序..."
-        "$EXECUTABLE"
+        echo "[SUCCESS] 编译成功"
+        launch_app "$EXECUTABLE" "$PLATFORM"
     else
         echo "[ERROR] 编译失败"
         read -p "按回车键退出..."
@@ -75,14 +100,11 @@ if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "mingw"* ]]; then
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Linux
     EXECUTABLE="$BUILD_DIR/XMLToDocxConverter"
+    PLATFORM="linux"
     
     if [ -f "$EXECUTABLE" ]; then
         echo "[INFO] 检测到已编译的程序，直接启动..."
-        export QT_QPA_PLATFORM=${QT_QPA_PLATFORM:-xcb}
-        nohup "$EXECUTABLE" > /dev/null 2>&1 &
-        disown
-        echo "[SUCCESS] 程序已启动"
-        sleep 1
+        launch_app "$EXECUTABLE" "$PLATFORM"
         exit 0
     fi
     
@@ -109,16 +131,10 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     mkdir -p "$BUILD_DIR" && cd "$BUILD_DIR"
 
     echo "[INFO] 编译中..."
-    cmake .. && make -j$(nproc 2>/dev/null || echo 4)
-
-    if [ $? -eq 0 ]; then
+    if cmake .. && make -j$(nproc 2>/dev/null || echo 4); then
         echo ""
-        echo "[SUCCESS] 编译成功，启动程序..."
-        export QT_QPA_PLATFORM=${QT_QPA_PLATFORM:-xcb}
-        nohup "$EXECUTABLE" > /dev/null 2>&1 &
-        disown
-        echo "[SUCCESS] 程序已启动"
-        sleep 1
+        echo "[SUCCESS] 编译成功"
+        launch_app "$EXECUTABLE" "$PLATFORM"
     else
         echo "[ERROR] 编译失败"
         exit 1
@@ -127,12 +143,12 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
 elif [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
     EXECUTABLE="$BUILD_DIR/XMLToDocxConverter"
+    PLATFORM="macos"
     
     if [ -f "$EXECUTABLE" ]; then
         echo "[INFO] 检测到已编译的程序，直接启动..."
-        nohup "$EXECUTABLE" > /dev/null 2>&1 &
-        disown
-        echo "[SUCCESS] 程序已启动"
+        launch_app "$EXECUTABLE" "$PLATFORM"
+        # 保持终端打开一会儿让用户看到消息
         sleep 1
         exit 0
     fi
@@ -142,6 +158,8 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 
     if ! command -v brew &> /dev/null; then
         echo "[ERROR] 未检测到 Homebrew，请先安装: https://brew.sh"
+        echo ""
+        read -p "按回车键退出..."
         exit 1
     fi
 
@@ -156,17 +174,15 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     mkdir -p "$BUILD_DIR" && cd "$BUILD_DIR"
 
     echo "[INFO] 编译中..."
-    cmake .. && make -j$(sysctl -n hw.ncpu 2>/dev/null || echo 4)
-
-    if [ $? -eq 0 ]; then
+    if cmake .. && make -j$(sysctl -n hw.ncpu 2>/dev/null || echo 4); then
         echo ""
-        echo "[SUCCESS] 编译成功，启动程序..."
-        nohup "$EXECUTABLE" > /dev/null 2>&1 &
-        disown
-        echo "[SUCCESS] 程序已启动"
+        echo "[SUCCESS] 编译成功"
+        launch_app "$EXECUTABLE" "$PLATFORM"
         sleep 1
     else
         echo "[ERROR] 编译失败"
+        echo ""
+        read -p "按回车键退出..."
         exit 1
     fi
 
