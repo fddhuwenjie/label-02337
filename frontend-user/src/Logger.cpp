@@ -101,3 +101,54 @@ void Logger::writeLog(const QString &formattedMessage) {
         m_stream.flush();
     }
 }
+
+#ifdef TEST_MODE
+#include <QCoreApplication>
+#include <QFile>
+#include "XMLParser.h"
+#include "DOCXGenerator.h"
+#include "DocumentModel.h"
+
+int main(int argc, char *argv[]) {
+    QCoreApplication app(argc, argv);
+    
+    if (argc < 3) {
+        qWarning() << "Usage:" << argv[0] << "<input.xml> <output.docx>";
+        return 1;
+    }
+    
+    QString inputFile = QString::fromLocal8Bit(argv[1]);
+    QString outputFile = QString::fromLocal8Bit(argv[2]);
+    
+    QFile file(inputFile);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Failed to open XML file:" << inputFile;
+        return 1;
+    }
+    QString xmlContent = QString::fromUtf8(file.readAll());
+    file.close();
+    
+    XMLParser parser;
+    std::unique_ptr<DocumentModel> model = parser.parse(xmlContent);
+    
+    if (!model) {
+        qWarning() << "Failed to parse XML:" << inputFile << "Error:" << parser.lastError();
+        return 1;
+    }
+    
+    DOCXGenerator generator;
+    if (!generator.generate(*model, outputFile)) {
+        qWarning() << "Failed to generate DOCX:" << outputFile << "Error:" << generator.lastError();
+        return 1;
+    }
+    
+    QFileInfo checkFile(outputFile);
+    if (checkFile.exists() && checkFile.size() > 0) {
+        qDebug() << "Successfully generated DOCX:" << outputFile << "Size:" << checkFile.size() << "bytes";
+        return 0;
+    } else {
+        qWarning() << "Generated file does not exist or is empty";
+        return 1;
+    }
+}
+#endif
