@@ -121,6 +121,35 @@ target_link_libraries(${PROJECT_NAME}
     ${LIBZIP_LIBRARIES}
 )
 
+# Test runner executable
+add_executable(${PROJECT_NAME}_test_runner
+    src/test_runner.cpp
+    src/XMLParser.cpp
+    src/DOCXGenerator.cpp
+    src/SampleGenerator.cpp
+    src/Logger.cpp
+)
+
+target_link_libraries(${PROJECT_NAME}_test_runner
+    Qt6::Core
+    Qt6::Xml
+    ${LIBZIP_LIBRARIES}
+)
+
+target_include_directories(${PROJECT_NAME}_test_runner PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+    ${LIBZIP_INCLUDE_DIRS}
+)
+
+# Test target
+add_custom_target(test
+    COMMAND ${CMAKE_COMMAND} -E echo "Running tests..."
+    COMMAND ${PROJECT_NAME}_test_runner
+    DEPENDS ${PROJECT_NAME}_test_runner
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running test suite"
+)
+
 # Install
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 install(DIRECTORY samples/ DESTINATION share/${PROJECT_NAME}/samples)
