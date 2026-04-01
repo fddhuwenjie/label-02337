@@ -121,6 +121,53 @@ target_link_libraries(${PROJECT_NAME}
     ${LIBZIP_LIBRARIES}
 )
 
+# Test target: CLI test application (no GUI)
+add_executable(${PROJECT_NAME}_test
+    src/XMLParser.cpp
+    src/DOCXGenerator.cpp
+    src/HTMLParser.cpp
+    src/Logger.cpp
+)
+
+target_compile_definitions(${PROJECT_NAME}_test PRIVATE TEST_MODE)
+
+target_link_directories(${PROJECT_NAME}_test PRIVATE
+    ${LIBZIP_LIBRARY_DIRS}
+)
+
+target_link_libraries(${PROJECT_NAME}_test
+    Qt6::Core
+    Qt6::Xml
+    ${LIBZIP_LIBRARIES}
+)
+
+# Enable testing
+enable_testing()
+
+# Test 1-5: Export each sample and verify output exists
+set(SAMPLES
+    "sample1_basic"
+    "sample2_rich_text"
+    "sample3_table"
+    "sample4_report"
+    "sample5_invoice"
+)
+
+foreach(SAMPLE ${SAMPLES})
+    add_test(
+        NAME Export_${SAMPLE}
+        COMMAND ${CMAKE_COMMAND} -E env QT_QPA_PLATFORM=offscreen
+        $<TARGET_FILE:${PROJECT_NAME}_test>
+        ${CMAKE_SOURCE_DIR}/samples/${SAMPLE}.xml
+        ${CMAKE_BINARY_DIR}/${SAMPLE}.docx
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+    set_tests_properties(Export_${SAMPLE} PROPERTIES
+        PASS_REGULAR_EXPRESSION "Successfully generated"
+        TIMEOUT 30
+    )
+endforeach()
+
 # Install
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 install(DIRECTORY samples/ DESTINATION share/${PROJECT_NAME}/samples)

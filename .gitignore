@@ -19,6 +19,10 @@ out/
 moc_*.cpp
 ui_*.h
 qrc_*.cpp
+.qt/
+
+# CTest generated files
+CTestTestfile.cmake
 
 # Compiled files
 *.o
