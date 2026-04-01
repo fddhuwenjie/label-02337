@@ -1,0 +1,50 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          pkg-config \
+          qt6-base-dev \
+          libqt6xml6 \
+          libqscintilla2-qt6-dev \
+          libzip-dev \
+          cppcheck
+          
+    - name: Run cppcheck static analysis
+      run: |
+        cd frontend-user
+        cppcheck --enable=warning,style,performance --error-exitcode=1 src/ include/
+        
+    - name: Configure CMake
+      run: |
+        cd frontend-user
+        mkdir -p build
+        cd build
+        cmake ..
+        
+    - name: Build project
+      run: |
+        cd frontend-user/build
+        make -j$(nproc)
+        
+    - name: Run tests
+      run: |
+        cd frontend-user
+        make -C build test
