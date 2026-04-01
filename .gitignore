@@ -47,6 +47,9 @@ Thumbs.db
 # Logs
 *.log
 
+# 轨迹文件（众测评分记录）
+[0-9][0-9][0-9][0-9].md
+
 # Temporary files
 *.tmp
 *.temp

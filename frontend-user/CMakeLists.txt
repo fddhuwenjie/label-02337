@@ -121,6 +121,26 @@ target_link_libraries(${PROJECT_NAME}
     ${LIBZIP_LIBRARIES}
 )
 
+# Test executable
+add_executable(${PROJECT_NAME}_test src/test.cpp)
+target_link_directories(${PROJECT_NAME}_test PRIVATE
+    ${QSCINTILLA_LIBRARY_DIRS}
+    ${LIBZIP_LIBRARY_DIRS}
+)
+target_link_libraries(${PROJECT_NAME}_test
+    Qt6::Core
+    Qt6::Xml
+    ${LIBZIP_LIBRARIES}
+)
+
+# Add test target
+add_custom_target(test
+    COMMAND ${PROJECT_NAME}_test
+    DEPENDS ${PROJECT_NAME}_test
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Running tests..."
+)
+
 # Install
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 install(DIRECTORY samples/ DESTINATION share/${PROJECT_NAME}/samples)
